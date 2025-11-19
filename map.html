@@ -423,20 +423,35 @@
   }
 
   // ====== Map ======
-  function initMap(){
-    map = L.map('map', { crs: L.CRS.Simple, zoomControl:true, attributionControl:false, wheelPxPerZoomLevel:120 });
-    vendorLayer.addTo(map);
-    map.on('click', (e)=>{
-      if(!admin || !placingVendor) return;
-      const v = vendors.find(x=>x.id===placingVendor);
-      if(!v){ placingVendor=null; map.getContainer().style.cursor=''; return; }
-      v.x = +e.latlng.lng.toFixed(1);
-      v.y = +e.latlng.lat.toFixed(1);
-      placingVendor=null; map.getContainer().style.cursor='';
-      persistVendors(); rebuildVendorMarkers(); renderVendorList();
-      focusVendor(v.id);
-    });
-  }
+function initMap(){
+  map = L.map('map', { 
+    crs: L.CRS.Simple,
+    zoomControl: true,
+    attributionControl: false,
+    wheelPxPerZoomLevel: 120,
+    minZoom: -4   // ← Added for wider zoom-out
+  });
+
+  vendorLayer.addTo(map);
+
+  map.on('click', (e)=>{
+    if(!admin || !placingVendor) return;
+    const v = vendors.find(x=>x.id===placingVendor);
+    if(!v){
+      placingVendor=null;
+      map.getContainer().style.cursor='';
+      return;
+    }
+    v.x = +e.latlng.lng.toFixed(1);
+    v.y = +e.latlng.lat.toFixed(1);
+    placingVendor=null;
+    map.getContainer().style.cursor='';
+    persistVendors();
+    rebuildVendorMarkers();
+    renderVendorList();
+    focusVendor(v.id);
+  });
+}
 
   function buildMapWithImage(naturalWidth, naturalHeight){
     const boundsLocal = [[0,0],[naturalHeight,naturalWidth]]; bounds = boundsLocal;
