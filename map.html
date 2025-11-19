@@ -218,7 +218,7 @@
   const IMAGE_CANDIDATES = ["./floor_map.png", "floor_map.png", "/floor_map.png", "../floor_map.png","https://raw.githubusercontent.com/SgtDicks/GhMX/refs/heads/main/floor_map.png"];
   const VENDOR_CANDIDATES = ["./ghmx-vendors.json", "ghmx-vendors.json", "/ghmx-vendors.json", "../ghmx-vendors.json","https://raw.githubusercontent.com/SgtDicks/GhMX/refs/heads/main/ghmx-vendors.json"];
   const STORAGE_VENDORS = 'ghmx-floorplan-vendors-v1';
-  const VIEW_FOCUS_ZOOM = 0.30;
+  const VIEW_FOCUS_ZOOM = 0.34;
 
   // Hidden remote .env URL (Base64) + candidates
   const randomcodethatyoudontneedtothinkabout = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL1NndERpY2tzL0Z1bnN0dWZmL3JlZnMvaGVhZHMvbWFpbi8uZW52";
@@ -345,7 +345,7 @@ function initMap(){
     zoomControl: true,
     attributionControl: false,
     wheelPxPerZoomLevel: 120,
-    minZoom: -4   // ← Added for wider zoom-out
+    minZoom: -2   // ← Added for wider zoom-out
   });
 
   vendorLayer.addTo(map);
