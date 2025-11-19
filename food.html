@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food & Drinks</title>
+
+<style>
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --text: #e6e7ea;
+  --accent: #ff005c;
+  --font: "Inter", "Roboto", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  padding: 1em;
+}
+
+h1 {
+  color: var(--accent);
+  text-align: center;
+}
+
+#vendorList {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.vendor {
+  background: var(--panel);
+  padding: 1em;
+  margin-top: 1em;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.vendor:hover {
+  background: #1d2535;
+}
+
+.vendor-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+/* Viewer */
+#viewerContainer {
+  display: none;
+  flex-direction: column;
+  height: 85vh;
+}
+
+#headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .5em;
+}
+
+#backBtn {
+  background: var(--accent);
+  color: white;
+  padding: .5em 1em;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+#downloadBtn {
+  background: #4CAF50;
+  color: white;
+  padding: .5em 1em;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Image viewer */
+#imageViewer {
+  flex-grow: 1;
+  width: 100%;
+  object-fit: contain;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Food & Drinks</h1>
+
+<div id="vendorList">
+  <div class="vendor" data-img="food/mr-pulled.jpg"><div class="vendor-title">Mr Pulled</div></div>
+  <div class="vendor" data-img="food/tea-365.jpg"><div class="vendor-title">Tea 365</div></div>
+  <div class="vendor" data-img="food/that-chicken-chick.jpg"><div class="vendor-title">That Chicken Chick</div></div>
+  <div class="vendor" data-img="food/chef-365.jpg"><div class="vendor-title">Chef 365</div></div>
+  <div class="vendor" data-img="food/gimme-donuts.jpg"><div class="vendor-title">Gimme Donuts</div></div>
+</div>
+
+<div id="viewerContainer">
+  <div id="headerBar">
+    <button id="backBtn">← Back</button>
+  </div>
+
+  <img id="imageViewer" src="">
+</div>
+
+<script>
+const vendorList = document.getElementById("vendorList");
+const viewerContainer = document.getElementById("viewerContainer");
+const imageViewer = document.getElementById("imageViewer");
+const downloadBtn = document.getElementById("downloadBtn");
+const backBtn = document.getElementById("backBtn");
+
+document.querySelectorAll(".vendor").forEach(v => {
+  v.addEventListener("click", () => {
+    const img = v.dataset.img;
+
+    vendorList.style.display = "none";
+    viewerContainer.style.display = "flex";
+
+    imageViewer.src = img;
+    downloadBtn.onclick = () => window.location.href = img;
+  });
+});
+
+backBtn.onclick = () => {
+  viewerContainer.style.display = "none";
+  vendorList.style.display = "block";
+  imageViewer.src = "";
+};
+</script>
+
+</body>
+</html>
+

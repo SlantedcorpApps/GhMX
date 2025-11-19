@@ -2,89 +2,618 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>App Warming Up</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GHMX Schedule</title>
 <style>
-  body {
-    margin: 0;
-    background: #0f1115;
-    color: #e6e7ea;
+:root {
+  --bg: #0f1115;
+  --panel: #161a22;
+  --text: #e6e7ea;
+  --accent: #ff005c;
+  --accent-alt: #ff005c; /* Second color for Cosplay stage */
+  --font: "Inter", "Roboto", sans-serif;
+}
+  
+body {margin:0;background:var(--bg);color:var(--text);font-family:var(--font);height:100vh;display:flex;flex-direction:column;}
+header {background:var(--panel);text-align:center;padding:0.6em 0.5em;position:sticky;top:0;z-index:100;}
+h1{font-size:1.2rem;margin:0.2em 0;color:var(--accent);}
+nav{display:flex;justify-content:center;gap:1em;margin-top:0.3em;}
+button{background:none;border:none;color:var(--text);font-size:1rem;padding:0.3em 0.5em;border-bottom:2px solid transparent;cursor:pointer;}
+button.active{border-bottom-color:var(--accent);}
+main{flex-grow:1;display:flex;flex-direction:column;position:relative;overflow:hidden;}
+
+iframe, #scheduleSection, #foodSection {
+    flex-grow: 1;
+    width: 100%;
+    border: none;
+    background: var(--bg);
+    min-height: 0;
+}
+.hidden{display:none !important;}
+
+/* --- SPLIT SCHEDULE STYLES --- */
+#scheduleSection {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: "Arial", sans-serif;
-    height: 100vh;
-    text-align: center;
-    overflow: hidden;
-    padding: 20px;
-  }
+    height: 100%;
+    padding-bottom: 0;
+}
 
-  /* Always visible heading */
-  .glow {
-    font-size: clamp(1.8rem, 4vw, 3rem);
-    font-weight: bold;
-    text-shadow: 0 0 4px #7aa2ff;
-    animation: glowPulse 2.5s ease-in-out infinite;
-  }
-
-  @keyframes glowPulse {
-    0% { text-shadow: 0 0 5px #7aa2ff; }
-    50% { text-shadow: 0 0 20px #7aa2ff; }
-    100% { text-shadow: 0 0 5px #7aa2ff; }
-  }
-
-  /* Fade-in paragraph */
-  .subtext {
-    margin-top: 16px;
-    font-size: clamp(1rem, 2vw, 1.3rem);
-    color: #9aa3b2;
-    opacity: 0;
-    animation: fade 2s ease forwards;
-    animation-delay: 0.5s;
-  }
-
-  @keyframes fade {
-    to { opacity: 1; }
-  }
-
-  /* Loader */
-  .loader {
+.schedule-grid {
     display: flex;
-    gap: 10px;
-    margin-top: 40px;
-  }
+    flex: 1;
+    overflow: hidden;
+    border-top: 1px solid #333;
+}
 
-  .dot {
-    width: 14px;
-    height: 14px;
-    background: #7aa2ff;
-    border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out;
-  }
+.schedule-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #333;
+    min-width: 0;
+}
 
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
+.schedule-column:last-child {
+    border-right: none;
+}
 
-  @keyframes bounce {
-    0%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-14px); }
-  }
+.column-header {
+    background: var(--panel);
+    padding: 0.8em;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+}
+
+#col-cosplay .column-header {
+    border-bottom-color: var(--accent-alt);
+    color: var(--accent-alt);
+}
+
+.column-content {
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 3em;
+}
+
+/* Event Styles */
+.event{padding:1em;border-bottom:1px solid #222;cursor:pointer;transition:background 0.2s;}
+.event:hover{background:#1b1f29;}
+.event-time{color:var(--text); font-weight:bold; font-size: 0.9rem;}
+#col-central .event-time { color: var(--accent); }
+#col-cosplay .event-time { color: var(--accent-alt); }
+
+.event-title{margin-top:0.3em; font-size: 0.95rem;}
+.event-stage{font-size:0.8rem;color:#aaa; display:none;} 
+
+.day{
+    padding: 0.5em;
+    font-weight: bold;
+    background: #1f242e;
+    border-top: 1px solid #333;
+    color: #fff;
+    font-size: 1rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+}
+
+/* Detail View */
+#detailView{position:absolute;top:0;left:100%;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;transition:left 0.3s ease-in-out;z-index:200;overflow-y:auto;}
+#detailView.active{left:0;}
+#detailImage{width:100%;max-height:40vh;object-fit:cover;}
+#detailContent{padding:1em;}
+#backBtn{background:var(--accent);color:white;border:none;padding:0.6em 1em;margin:1em;border-radius:4px;align-self:flex-start;cursor:pointer;}
+
+/* Modals */
+#editModal, #addModal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:500; align-items:center; justify-content:center;}
+#editForm, #addForm {
+    background:var(--panel);
+    padding:1.5em;
+    border-radius:10px;
+    width:min(500px, 90vw);
+    display:flex;
+    flex-direction:column;
+    gap:1em;
+}
+input, textarea, select {
+    background:#101625;
+    color:var(--text);
+    border:1px solid #333;
+    border-radius:6px;
+    padding:.5em;
+    font-family: inherit;
+}
+#editForm button, #addForm button {
+    background:var(--accent);
+    border:none;
+    padding:.6em;
+    color:#fff;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* Admin Controls */
+.adminControls{
+    display:flex; 
+    flex-wrap: wrap; 
+    gap:.5em; 
+    justify-content:center; 
+    padding: 0.5em; 
+    background: var(--panel);
+    border-bottom: 1px solid #333;
+}
+.adminOnly{display:none;}
+body.admin .adminOnly{display:inline-flex;}
+label.btn { cursor: pointer; background: #222; padding: 0.3em 0.6em; border-radius: 4px; font-size: 0.8rem; }
+label.btn:hover { background: #333; }
+input[type="file"] { display: none; }
+.adminBtn { background: #333; color: white; padding: 0.3em 0.6em; border-radius: 4px; font-size: 0.8rem; }
+
+/* Scrollbar prettying */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 </style>
 </head>
-
 <body>
-  <div class="glow">Please wait till closer to the event</div>
+<header>
+  <h1>GHMX</h1>
+  <nav>
+    <button id="mapBtn" class="active">Map</button>
+    <button id="scheduleBtn">Schedule</button>
+    <button id="foodBtn">Food</button>
+  </nav>
+</header>
+<main>
+  <iframe id="mapFrame" src="map.html" allowfullscreen title="GHMX Interactive Floorplan"></iframe>
 
-  <div class="subtext">
-    We are just putting the final touches on the app to ensure you get the best experience
-  </div>
+  <section id="scheduleSection" class="hidden">
+    
+    <!-- Admin Controls Header -->
+    <div class="adminControls adminOnly">
+      <button class="adminBtn" id="addEventBtn">+ Add Event</button>
+      <div style="border-left:1px solid #555; margin:0 5px;"></div>
+      <button class="adminBtn" id="exportCentralBtn">Exp Central</button>
+      <label class="btn" for="importCentralInput">Imp Central</label>
+      <input id="importCentralInput" type="file" accept="application/json" />
+      <div style="border-left:1px solid #555; margin:0 5px;"></div>
+      <button class="adminBtn" id="exportCosplayBtn">Exp Cosplay</button>
+      <label class="btn" for="importCosplayInput">Imp Cosplay</label>
+      <input id="importCosplayInput" type="file" accept="application/json" />
+    </div>
 
-  <div class="loader">
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-  </div>
+    <div id="loading" style="text-align:center;padding:1em;">Loading schedules...</div>
+
+    <!-- Split Layout -->
+    <div class="schedule-grid" id="scheduleGrid" style="display:none;">
+        <!-- Central Column -->
+        <div class="schedule-column" id="col-central">
+            <div class="column-header">Stage Central</div>
+            <div class="column-content" id="content-central"></div>
+        </div>
+        <!-- Cosplay Column -->
+        <div class="schedule-column" id="col-cosplay">
+            <div class="column-header">CosplayX Stage</div>
+            <div class="column-content" id="content-cosplay"></div>
+        </div>
+    </div>
+  </section>
+
+  <section id="foodSection" class="hidden">
+       <iframe id="foodFrame" src="food.html" title="Food & Drinks at GHMX" style="width:100%; height:100vh; border:none;"></iframe>
+  </section>
+
+  <section id="detailView">
+    <button id="backBtn">← Back</button>
+    <img id="detailImage" src="" alt="Event Image" />
+    <div id="detailContent"></div>
+  </section>
+</main>
+
+<!-- Edit Modal -->
+<div id="editModal">
+  <form id="editForm">
+    <h2>Edit Event</h2>
+    <p id="editSourceLabel" style="font-size:0.8rem; color:#888; margin-top:-10px;"></p>
+    <input type="text" id="editTitle" placeholder="Event Title" required />
+    <input type="text" id="editTime" placeholder="Time" required />
+    <textarea id="editDescription" placeholder="Description"></textarea>
+    <input type="url" id="editImage" placeholder="Image URL (optional)" />
+    <div style="display:flex;gap:.5em;justify-content:flex-end;">
+      <button type="button" id="cancelEdit">Cancel</button>
+      <button type="submit">Save</button>
+    </div>
+  </form>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal">
+  <form id="addForm">
+    <h2>Add New Event</h2>
+    <label style="font-size:0.8rem; color:#aaa;">Select Schedule:</label>
+    <select id="addSourceSelect">
+        <option value="central">Stage Central</option>
+        <option value="cosplay">CosplayX Stage</option>
+    </select>
+    
+    <label style="font-size:0.8rem; color:#aaa;">Select Day:</label>
+    <select id="addDaySelect" required></select>
+    
+    <input type="text" id="addTitle" placeholder="Event Title" required />
+    <input type="text" id="addTime" placeholder="Time" required />
+    <textarea id="addDescription" placeholder="Description"></textarea>
+    <input type="url" id="addImage" placeholder="Image URL (optional)" />
+    <div style="display:flex;gap:.5em;justify-content:flex-end;">
+      <button type="button" id="cancelAdd">Cancel</button>
+      <button type="submit">Add Event</button>
+    </div>
+  </form>
+</div>
+
+<script>
+let admin = false;
+let ADMIN_CODE = null;
+
+// Store two distinct datasets
+let schedules = {
+    central: [],
+    cosplay: []
+};
+
+// Tracking editing state
+let editingState = {
+    source: null, // 'central' or 'cosplay'
+    dayIndex: null,
+    eventIndex: null
+};
+
+// --- Admin Auth Logic ---
+const randomcodethatyoudontneedtothinkabout = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL1NndERpY2tzL0Z1bnN0dWZmL3JlZnMvaGVhZHMvbWFpbi8uZW52";
+const decodedUrl = atob(randomcodethatyoudontneedtothinkabout);
+const ENV_CANDIDATES = [decodedUrl, "./.env", ".env", "/.env", "../.env"];
+
+async function loadEnv() {
+    for (const path of ENV_CANDIDATES) {
+        try {
+            const res = await fetch(path + '?v=' + Date.now());
+            if (!res.ok) continue;
+            const text = await res.text();
+            const env = parseDotEnv(text);
+            if (env['admin-password']) {
+                ADMIN_CODE = env['admin-password'];
+                return;
+            }
+        } catch (e) {}
+    }
+}
+
+function parseDotEnv(src) {
+    const out = {};
+    src.split(/\r?\n/).forEach(line => {
+        const s = line.trim();
+        if (!s || s.startsWith('#')) return;
+        const eq = s.indexOf('=');
+        if (eq === -1) return;
+        const k = s.slice(0, eq).trim();
+        let v = s.slice(eq + 1).trim();
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+            v = v.slice(1, -1);
+        }
+        out[k] = v;
+    });
+    return out;
+}
+
+// --- DOM Elements ---
+const mapBtn = document.getElementById('mapBtn');
+const scheduleBtn = document.getElementById('scheduleBtn');
+const foodBtn = document.getElementById('foodBtn');
+const mapFrame = document.getElementById('mapFrame');
+const scheduleSection = document.getElementById('scheduleSection');
+const foodSection = document.getElementById('foodSection');
+const loading = document.getElementById('loading');
+const scheduleGrid = document.getElementById('scheduleGrid');
+
+const detailView = document.getElementById('detailView');
+const detailImage = document.getElementById('detailImage');
+const detailContent = document.getElementById('detailContent');
+const backBtn = document.getElementById('backBtn');
+
+// Modals
+const editModal = document.getElementById('editModal');
+const addModal = document.getElementById('addModal');
+const editForm = document.getElementById('editForm');
+const addForm = document.getElementById('addForm');
+const cancelEdit = document.getElementById('cancelEdit');
+const cancelAdd = document.getElementById('cancelAdd');
+
+// Edit Inputs
+const editTitle = document.getElementById('editTitle');
+const editTime = document.getElementById('editTime');
+const editDescription = document.getElementById('editDescription');
+const editImage = document.getElementById('editImage');
+const editSourceLabel = document.getElementById('editSourceLabel');
+
+// Add Inputs
+const addEventBtn = document.getElementById('addEventBtn');
+const addSourceSelect = document.getElementById('addSourceSelect');
+const addDaySelect = document.getElementById('addDaySelect');
+const addTitle = document.getElementById('addTitle');
+const addTime = document.getElementById('addTime');
+const addDescription = document.getElementById('addDescription');
+const addImage = document.getElementById('addImage');
+
+// Export/Import
+const exportCentralBtn = document.getElementById('exportCentralBtn');
+const importCentralInput = document.getElementById('importCentralInput');
+const exportCosplayBtn = document.getElementById('exportCosplayBtn');
+const importCosplayInput = document.getElementById('importCosplayInput');
+
+// --- Navigation ---
+mapBtn.onclick = () => setTab('map');
+scheduleBtn.onclick = () => setTab('schedule');
+foodBtn.onclick = () => setTab('food');
+
+function setTab(tab) {
+    mapBtn.classList.toggle('active', tab === 'map');
+    scheduleBtn.classList.toggle('active', tab === 'schedule');
+    foodBtn.classList.toggle('active', tab === 'food');
+    
+    mapFrame.classList.toggle('hidden', tab !== 'map');
+    scheduleSection.classList.toggle('hidden', tab !== 'schedule');
+    foodSection.classList.toggle('hidden', tab !== 'food');
+}
+
+// --- Loading Logic ---
+const BASE_URL = "https://raw.githubusercontent.com/SgtDicks/GhMX/refs/heads/main/";
+
+async function fetchSchedule(filename) {
+    // Try local, then github. No more fallback to schedule.json
+    const candidates = [
+        filename, 
+        "./" + filename, 
+        BASE_URL + filename
+    ];
+    
+    for (let path of candidates) {
+        try {
+            const res = await fetch(path);
+            if (res.ok) return await res.json();
+        } catch (e) {}
+    }
+    return []; // Return empty array if failed
+}
+
+async function loadSchedules() {
+    const [centralData, cosplayData] = await Promise.all([
+        fetchSchedule('schedule_central.json'),
+        fetchSchedule('schedule_cosplay.json')
+    ]);
+
+    // Assign data directly. If empty, it stays empty.
+    schedules.central = centralData || [];
+    schedules.cosplay = cosplayData || [];
+
+    renderAll();
+    loading.style.display = 'none';
+    scheduleGrid.style.display = 'flex';
+}
+
+loadSchedules();
+
+// --- Rendering ---
+function renderAll() {
+    renderColumn('central', schedules.central, 'content-central');
+    renderColumn('cosplay', schedules.cosplay, 'content-cosplay');
+}
+
+function renderColumn(sourceKey, data, containerId) {
+    const container = document.getElementById(containerId);
+    if (!data || data.length === 0) {
+        container.innerHTML = "<div style='padding:1em;text-align:center;color:#666;'>No events found</div>";
+        return;
+    }
+
+    let html = '';
+    data.forEach((day, dayIdx) => {
+        html += `<div class='day'>${day.day}</div>`;
+        day.events.forEach((e, evtIdx) => {
+            html += `
+                <div class='event' 
+                     data-source='${sourceKey}'
+                     data-day='${dayIdx}' 
+                     data-idx='${evtIdx}'>
+                    <div class='event-time'>${e.time}</div>
+                    <div class='event-title'>${e.title}</div>
+                    ${admin ? `<button class='editBtn' style='margin-top:0.5em;font-size:0.7rem;padding:2px 6px;'>Edit</button>` : ''}
+                </div>`;
+        });
+    });
+    container.innerHTML = html;
+
+    // Attach click listeners
+    container.querySelectorAll('.event').forEach(el => {
+        el.addEventListener('click', (ev) => {
+            if (ev.target.classList.contains('editBtn')) {
+                openEdit(el.dataset);
+                ev.stopPropagation();
+            } else {
+                openDetail(el.dataset);
+            }
+        });
+    });
+}
+
+function openDetail(ds) {
+    const data = schedules[ds.source][ds.day].events[ds.idx];
+    detailImage.src = data.image || '';
+    detailImage.style.display = data.image ? 'block' : 'none';
+    detailContent.innerHTML = `<h2>${data.title}</h2><p style='color:var(--accent);font-weight:bold;margin-bottom:1em;'>${data.time}</p><p>${data.description || ''}</p>`;
+    detailView.classList.add('active');
+}
+
+backBtn.onclick = () => detailView.classList.remove('active');
+
+// --- Admin Logic ---
+async function enableAdmin() {
+    if (!ADMIN_CODE) await loadEnv();
+    if (!ADMIN_CODE) {
+        alert('Admin password not configured');
+        return;
+    }
+    const entered = prompt('Enter admin password:');
+    if (entered === ADMIN_CODE) {
+        admin = true;
+        document.body.classList.add('admin');
+        renderAll();
+    } else {
+        alert('Incorrect password');
+    }
+}
+
+window.addEventListener('keydown', e => {
+    if (e.key === 'a' && e.ctrlKey) {
+        e.preventDefault();
+        enableAdmin();
+    }
+});
+
+// Edit Event
+function openEdit(ds) {
+    editingState = {
+        source: ds.source,
+        dayIndex: parseInt(ds.day),
+        eventIndex: parseInt(ds.idx)
+    };
+    const evt = schedules[ds.source][ds.day].events[ds.idx];
+    
+    editSourceLabel.textContent = (ds.source === 'central' ? "Stage Central" : "CosplayX Stage");
+    editTitle.value = evt.title;
+    editTime.value = evt.time;
+    editDescription.value = evt.description || '';
+    editImage.value = evt.image || '';
+    
+    editModal.style.display = 'flex';
+}
+
+editForm.addEventListener('submit', ev => {
+    ev.preventDefault();
+    if (!editingState.source) return;
+
+    const evt = schedules[editingState.source][editingState.dayIndex].events[editingState.eventIndex];
+    evt.title = editTitle.value.trim();
+    evt.time = editTime.value.trim();
+    evt.description = editDescription.value.trim();
+    evt.image = editImage.value.trim();
+
+    editModal.style.display = 'none';
+    renderAll();
+});
+
+cancelEdit.onclick = () => editModal.style.display = 'none';
+
+// Add Event
+addEventBtn.onclick = () => {
+    updateAddDaySelect();
+    addModal.style.display = 'flex';
+};
+
+addSourceSelect.onchange = updateAddDaySelect;
+
+function updateAddDaySelect() {
+    const source = addSourceSelect.value;
+    const data = schedules[source];
+    addDaySelect.innerHTML = '';
+    if(data && data.length > 0) {
+        data.forEach((day, idx) => {
+            const opt = document.createElement('option');
+            opt.value = idx;
+            opt.textContent = day.day;
+            addDaySelect.appendChild(opt);
+        });
+    } else {
+        const opt = document.createElement('option');
+        opt.textContent = "No days defined (Import first)";
+        addDaySelect.appendChild(opt);
+    }
+}
+
+addForm.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const source = addSourceSelect.value;
+    const dayIdx = parseInt(addDaySelect.value);
+    
+    if (isNaN(dayIdx) || !schedules[source] || !schedules[source][dayIdx]) {
+        alert("Invalid day or schedule empty. Please import a JSON first or check your files.");
+        return;
+    }
+
+    const newEvt = {
+        title: addTitle.value.trim(),
+        time: addTime.value.trim(),
+        stage: (source === 'central' ? "Central" : "CosplayX"),
+        description: addDescription.value.trim(),
+        image: addImage.value.trim()
+    };
+
+    schedules[source][dayIdx].events.push(newEvt);
+    renderAll();
+    addModal.style.display = 'none';
+    addForm.reset();
+});
+
+cancelAdd.onclick = () => {
+    addModal.style.display = 'none';
+    addForm.reset();
+};
+
+// --- Import / Export ---
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function handleImport(file, sourceKey) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const data = JSON.parse(reader.result);
+            if (Array.isArray(data)) {
+                schedules[sourceKey] = data;
+                renderAll();
+                alert(`Imported to ${sourceKey} successfully!`);
+            } else {
+                alert('Invalid format: Root must be an array.');
+            }
+        } catch (e) {
+            alert('Import failed: ' + e.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+exportCentralBtn.onclick = () => downloadJSON(schedules.central, 'schedule_central.json');
+exportCosplayBtn.onclick = () => downloadJSON(schedules.cosplay, 'schedule_cosplay.json');
+
+importCentralInput.onchange = (e) => { handleImport(e.target.files[0], 'central'); e.target.value = ''; };
+importCosplayInput.onchange = (e) => { handleImport(e.target.files[0], 'cosplay'); e.target.value = ''; };
+
+// Food frame resize listener
+window.addEventListener("message", (event) => {
+  if (event.data.type === "resizeFood") {
+    document.getElementById("foodFrame").style.height = event.data.height + "px";
+  }
+});
+</script>
 </body>
 </html>
+
