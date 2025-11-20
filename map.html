@@ -478,7 +478,7 @@
     overlay.addTo(map);
     overlay.on('error', ()=> setStatus('Image failed to load.'));
     map.setMaxBounds(boundsLocal);
-    map.options.maxBoundsViscosity = 0.1; 
+    map.options.maxBoundsViscosity = 0.5; 
     map.fitBounds(boundsLocal,{padding:[100,100]});
   }
 
