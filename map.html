@@ -477,8 +477,8 @@
     const overlay = L.imageOverlay(IMAGE_URL ? (IMAGE_URL + cacheBust()) : '', boundsLocal, { interactive:false });
     overlay.addTo(map);
     overlay.on('error', ()=> setStatus('Image failed to load.'));
-    map.setMaxBounds(boundsLocal);
-    map.options.maxBoundsViscosity = 0.1; 
+    // map.setMaxBounds(boundsLocal);
+    // map.options.maxBoundsViscosity = 0.1; 
     map.fitBounds(boundsLocal,{padding:[100,100]});
   }
 
